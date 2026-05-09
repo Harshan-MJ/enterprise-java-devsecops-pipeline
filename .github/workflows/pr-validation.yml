@@ -7,21 +7,31 @@ on:
 
 jobs:
 
-  pr-validation:
+  # =====================================
+  # Init Stage
+  # =====================================
+  init:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Init Pipeline
+        run: echo "Starting PR Validation Pipeline"
+
+  # =====================================
+  # Unit Test Stage
+  # =====================================
+  unit-test:
+
+    needs: init
 
     runs-on: ubuntu-latest
 
     steps:
 
-      # =====================================
-      # Checkout
-      # =====================================
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # =====================================
-      # Setup Java
-      # =====================================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -29,14 +39,53 @@ jobs:
           java-version: '17'
           cache: maven
 
-      # =====================================
-      # Unit Tests
-      # =====================================
       - name: Run Unit Tests
         run: mvn test
 
-      # =====================================
-      # Generate Coverage Report
-      # =====================================
-      - name: Generate JaCoCo Coverage
+  # =====================================
+  # Coverage Stage
+  # =====================================
+  coverage:
+
+    needs: unit-test
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      - name: Generate Coverage Report
         run: mvn jacoco:report
+
+  # =====================================
+  # Build Validation Stage
+  # =====================================
+  build-validation:
+
+    needs: coverage
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      - name: Validate Maven Build
+        run: mvn clean package -DskipTests

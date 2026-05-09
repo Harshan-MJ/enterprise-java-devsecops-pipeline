@@ -1,0 +1,116 @@
+name: Main Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  # =====================================
+  # Init Stage
+  # =====================================
+  init:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Init Deployment Pipeline
+        run: echo "Starting Main Deployment Pipeline"
+
+  # =====================================
+  # Build Stage
+  # =====================================
+  build:
+
+    needs: init
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      - name: Build Application
+        run: mvn clean package -DskipTests
+
+  # =====================================
+  # Docker Stage
+  # =====================================
+  docker:
+
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.tag }}
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate Image Tag
+        id: image_tag
+        run: |
+          TAG=v1.${GITHUB_RUN_NUMBER}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Build Docker Image
+        run: |
+          docker build -t auth-service:${{ steps.image_tag.outputs.tag }} .
+
+  # =====================================
+  # OWASP Stage
+  # =====================================
+  owasp:
+
+    needs: docker
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      - name: Run OWASP Dependency Check
+        run: mvn org.owasp:dependency-check-maven:check
+
+  # =====================================
+  # Manifest Update Stage
+  # =====================================
+  manifest-update:
+
+    needs: docker
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Update Deployment Manifest
+        run: |
+          sed -i 's|image: .*|image: harshanmj/auth-service:v1.${{ github.run_number }}|' k8s/auth-service/dev/deployment.yaml
+
+      - name: Show Updated Manifest
+        run: |
+          cat k8s/auth-service/dev/deployment.yaml

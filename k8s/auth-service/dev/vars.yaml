@@ -1,0 +1,7 @@
+replicas: 1
+
+environment: dev
+
+resources:
+  memory: 512Mi
+  cpu: 500m
