@@ -1,0 +1,42 @@
+name: PR Validation Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  pr-validation:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # =====================================
+      # Checkout
+      # =====================================
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # =====================================
+      # Setup Java
+      # =====================================
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      # =====================================
+      # Unit Tests
+      # =====================================
+      - name: Run Unit Tests
+        run: mvn test
+
+      # =====================================
+      # Generate Coverage Report
+      # =====================================
+      - name: Generate JaCoCo Coverage
+        run: mvn jacoco:report

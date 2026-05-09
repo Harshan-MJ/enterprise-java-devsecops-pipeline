@@ -1,0 +1,13 @@
+target/
+
+.idea/
+
+.vscode/
+
+*.log
+
+*.class
+
+*.jar
+
+dependency-check-report.html
