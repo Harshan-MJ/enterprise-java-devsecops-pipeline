@@ -96,11 +96,14 @@ jobs:
   # =====================================
   # Manifest Update Stage
   # =====================================
-  manifest-update:
+    manifest-update:
 
     needs: docker
 
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
 
     steps:
 
@@ -114,3 +117,16 @@ jobs:
       - name: Show Updated Manifest
         run: |
           cat k8s/auth-service/dev/deployment.yaml
+
+      - name: Commit Updated Manifest
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+          git add k8s/auth-service/dev/deployment.yaml
+
+          git commit -m "updated deployment manifest with image tag"
+
+      - name: Push Manifest Changes
+        run: |
+          git push
