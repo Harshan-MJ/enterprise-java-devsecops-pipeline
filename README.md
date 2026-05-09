@@ -30,3 +30,5 @@ Production-style Java DevSecOps project implementing:
 - ArgoCD
 
 # pr validation testing
+
+# main deployment pipeline added
